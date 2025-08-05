@@ -1,0 +1,107 @@
+{
+    "name": "aptive/customer-portal",
+    "type": "project",
+    "description": "Aptive Customer Portal.",
+    "keywords": ["framework", "laravel"],
+    "license": "MIT",
+    "repositories":[
+        {"type": "composer", "url": "https://aptive.repo.repman.io"}
+    ],
+    "require": {
+        "php": "^8.2.0",
+        "ext-dom": "*",
+        "ext-libxml": "*",
+        "ext-simplexml": "*",
+        "aptive/laravel-jsonapi": "^1.1",
+        "aptive/pestroutes-sdk": "^7.0",
+        "aptive/worldpay": "^1.0",
+        "auth0/login": "^7.1",
+        "aws/aws-sdk-php": "^3.257",
+        "doctrine/dbal": "^3.4",
+        "fruitcake/laravel-cors": "^2.0",
+        "fusionauth/fusionauth-client": "^1.49",
+        "fusionauth/jwt-auth-webtoken-provider": "^1.0",
+        "guzzlehttp/guzzle": "^7.4",
+        "influxdata/influxdb-client-php": "^3.4",
+        "laravel-validation-rules/credit-card": "^1.6",
+        "laravel/framework": "^9.49",
+        "laravel/sanctum": "^2.11",
+        "laravel/tinker": "^2.5",
+        "newrelic/monolog-enricher": "^2.0",
+        "predis/predis": "^2.1",
+        "spatie/laravel-data": "^3.3",
+        "symfony/cache": "^6.2",
+        "twilio/sdk": "^6.32",
+        "web-token/jwt-signature-algorithm-rsa": "^3.3"
+    },
+    "require-dev": {
+        "brianium/paratest": "^6.4",
+        "canvural/larastan-strict-rules": "^2.1",
+        "fakerphp/faker": "^1.9.1",
+        "infection/infection": "^0.26.16",
+        "laravel/pint": "^1.8",
+        "laravel/sail": "^1.13.7",
+        "mockery/mockery": "^1.4",
+        "nunomaduro/collision": "^6.1",
+        "nunomaduro/larastan": "^2.0",
+        "phpunit/phpunit": "^9.5.19",
+        "roave/security-advisories": "dev-latest",
+        "spatie/laravel-ignition": "^1"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi",
+            "@php artisan vendor:publish --force --tag=livewire:assets --ansi"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+        ],
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "@php artisan key:generate --ansi"
+        ],
+        "test-report": [
+            "vendor/bin/phpunit --coverage-html reports"
+        ],
+        "check": [
+            "vendor/bin/pint --test",
+            "vendor/bin/phpstan analyze --memory-limit 1G",
+            "XDEBUG_MODE=coverage php artisan test --coverage --min=100",
+            "vendor/bin/infection --show-mutations"
+        ],
+        "cs-fix": [
+            "vendor/bin/pint"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": []
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "infection/extension-installer": true,
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

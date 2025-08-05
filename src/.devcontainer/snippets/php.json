@@ -1,0 +1,63 @@
+{
+	"Public method": {
+		"prefix": "met",
+		"body": [
+			"public function $1()",
+			"{",
+			"\t$2",
+			"}"
+		],
+		"description": "create a new public method"
+	},
+	"Public static method": {
+		"prefix": "smet",
+		"body": [
+			"public static function $1($2)",
+			"{",
+			"\t$$3",
+			"}"
+		],
+		"description": "create a new public static method"
+	},
+	"Protected method": {
+		"prefix": "pmet",
+		"body": [
+			"protected function $1()",
+			"{",
+			"    $2",
+			"}"
+		],
+		"description": "create a new protected method"
+	},
+	"Create fillable property": {
+		"prefix": "fillable",
+		"body": [
+			"/**",
+			" * The attributes that are mass assignable.",
+			" *",
+			" * @var string[]",
+			" */",
+			"protected $$fillable = [ '$1' ];"
+		],
+		"description": "description for Create fillable property"
+	},
+	"Belongs To": {
+		"prefix": "bto",
+		"body": [
+			"public function $1()",
+			"{",
+			"    return $this->belongsTo($2::class);",
+			"}"
+		],
+		"description": "Create a belongs to method"
+	},
+	"New Class": {
+		"prefix": "class",
+		"body": [
+			"class ${TM_FILENAME_BASE} {",
+			"\t$1",
+			"}"
+		],
+		"description": "description for New Class"
+	}
+}

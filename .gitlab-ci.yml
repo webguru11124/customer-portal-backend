@@ -1,0 +1,240 @@
+image: lorisleiva/laravel-docker:8.2
+.global_variables: &global_variables
+  DOCKER_REGISTRY: "986611149894.dkr.ecr.us-east-1.amazonaws.com"
+  REGISTRY_ID: "986611149894"
+  AWS_REGION: us-east-1
+  APP_IMAGE_REPOSITORY: customer-portal/backend
+  BUILD_IMAGE_REPOSITORY: gitlab/build
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  GITLAB_TOKEN: $DEPLOY_TOKEN
+variables:
+  <<: *global_variables
+  MYSQL_ROOT_PASSWORD: root
+  MYSQL_USER: mysql_user
+  MYSQL_PASSWORD: mysql_password
+  MYSQL_DATABASE: mysql_db
+  SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+  GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+
+default:
+  tags:
+    - eks-runner
+stages:
+- setup
+- build
+- test
+- mutation
+- deploy
+
+setup:
+  image: alpine:latest
+  stage: setup
+  script:
+    # if commit tag is define change CI_COMMIT_BRANCH equal to CI_COMMIT_TAG
+    - if [ "$CI_COMMIT_TAG" ]; then export CI_COMMIT_BRANCH=$CI_COMMIT_TAG; fi
+    # generate the fully qualified image TAG for ECR for the build/test image
+    - echo | awk -v branch=$CI_COMMIT_BRANCH -v commit_hash=$CI_COMMIT_SHA -v registry=$DOCKER_REGISTRY -v repository=$BUILD_IMAGE_REPOSITORY '{gsub("/","-", branch); branch=tolower(branch);printf "DOCKER_IMAGE_BUILD_TAG=%s/%s:build-%s-%s\n", registry, repository, branch, commit_hash}' >> build.env
+    # generate the fully qualified image TAG for ECR for automated deployment environments
+    - echo | awk -v branch=$CI_COMMIT_BRANCH -v commit_hash=$CI_COMMIT_SHA -v registry=$DOCKER_REGISTRY -v repository=$APP_IMAGE_REPOSITORY '{gsub("/","-", branch); branch=tolower(branch);printf "DOCKER_IMAGE_TAG=%s/%s:%s-%s\n", registry, repository, branch, commit_hash}' >> build.env
+    # generate fully qualified image for releases
+    - echo | awk -v branch=$CI_COMMIT_BRANCH -v registry=$DOCKER_REGISTRY -v repository=$APP_IMAGE_REPOSITORY '{gsub("/","-", branch); branch=tolower(branch);printf "DOCKER_IMAGE_RELEASE_TAG=%s/%s:%s\n", registry, repository, branch}' >> build.env
+    - env
+  artifacts:
+    reports:
+      dotenv: build.env
+
+build-image:
+  image:
+    name: amazon/aws-cli
+    entrypoint: [""]
+  stage: build
+  services:
+    - docker:dind
+  before_script:
+    - amazon-linux-extras install docker
+    - aws --version
+    - docker --version
+    - aws ecr get-login-password | docker login --username AWS --password-stdin $DOCKER_REGISTRY
+    - env
+  script:
+    # pull the most recent from the repo for caching
+    - export BUILD_DOCKER_IMAGE_TAG=$(awk '{gsub("/","-"); $0=tolower($0); print "build-"$0}')
+    - most_recent_image=$(aws ecr describe-images --repository-name $APP_IMAGE_REPOSITORY --registry-id $REGISTRY_ID  --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' --output text || true)
+    - docker pull $DOCKER_REGISTRY/$APP_IMAGE_REPOSITORY:$most_recent_image || true
+    - docker build --cache-from $DOCKER_REGISTRY/$APP_IMAGE_REPOSITORY:$most_recent_image -t $DOCKER_IMAGE_BUILD_TAG --build-arg CI_COMMIT_SHA=${DOCKER_IMAGE_TAG} --build-arg repman_token=${REPMAN_COMPOSER_AUTH_TOKEN} .
+    - docker push ${DOCKER_IMAGE_BUILD_TAG}
+
+composer:
+  stage: build
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}-composer
+    paths:
+      - src/vendor/
+  script:
+    - cd src
+    - composer config http-basic.aptive.repo.repman.io token $REPMAN_COMPOSER_AUTH_TOKEN
+    - composer install --prefer-dist --no-ansi --no-interaction --no-progress --no-scripts
+    - cp ../app.env .env
+    - php artisan key:generate
+  artifacts:
+    expire_in: 1 month
+    paths:
+      - src/vendor/
+      - src/.env
+
+sonarcloud-check:
+  stage: test
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script:
+    - sonar-scanner
+  only:
+    - merge_requests
+    - main
+    - develop
+    - staging
+
+phpstan:
+  stage: test
+  dependencies:
+    - composer
+  script:
+    - cd src
+    - vendor/bin/phpstan analyze --memory-limit 1G
+
+pint:
+  stage: test
+  dependencies:
+    - composer
+  script:
+    - cd src
+    - vendor/bin/pint --test
+
+phpunit:
+  stage: test
+  services:
+    - mariadb:latest
+  dependencies:
+    - composer
+  variables:
+    # Must store artifacts in the project directory even though our code in the image is located at /var/www/app
+    # See: https://stackoverflow.com/questions/56423038/why-does-gitlab-ci-does-not-find-my-junit-report-artifact
+    REPORTS_DIRECTORY: $CI_PROJECT_DIR/reports
+    COVERAGE_HTML_DIRECTORY: $REPORTS_DIRECTORY/coverage_html
+    COVERAGE_XML_DIRECTORY: $REPORTS_DIRECTORY/coverage-xml
+    REPORT_XML_FILE_PATH: $COVERAGE_XML_DIRECTORY/report.junit.xml
+    COBERTURA_XML_FILE_PATH: $REPORTS_DIRECTORY/cobertura/coverage.cobertura.xml
+    COVERAGE_TEXT_FILE_PATH: $REPORTS_DIRECTORY/text/coverage.txt # "php artisan test" command does not write to stdout with "--coverage-text" flag
+  script:
+    - mkdir -p $REPORTS_DIRECTORY/text
+    - touch $COVERAGE_TEXT_FILE_PATH
+    - cp ./.env.testing ./src/.env
+    - cd src
+    - echo memory_limit = 512M >> /usr/local/etc/php/php.ini
+    - php artisan config:clear
+    - php artisan migrate
+    - php --version
+    - XDEBUG_MODE=coverage php artisan test --coverage --min=100 --log-junit=$REPORT_XML_FILE_PATH --coverage-xml=$COVERAGE_XML_DIRECTORY --coverage-cobertura=$COBERTURA_XML_FILE_PATH --coverage-html=$COVERAGE_HTML_DIRECTORY --coverage-text=$COVERAGE_TEXT_FILE_PATH && cat $COVERAGE_TEXT_FILE_PATH
+  coverage: '/^\s*Lines:\s*\d+.\d+\%/'
+  artifacts:
+    when: on_success
+    paths:
+      - $COVERAGE_HTML_DIRECTORY
+      - $COVERAGE_XML_DIRECTORY
+      - $REPORT_XML_FILE_PATH
+    reports:
+      junit: $REPORT_XML_FILE_PATH
+      coverage_report:
+        coverage_format: cobertura
+        path: $COBERTURA_XML_FILE_PATH
+
+infection:
+  stage: mutation
+  services:
+    - mariadb:latest
+  dependencies:
+    - composer
+    - phpunit
+  script:
+    - cd src
+    - cp .env .env.testing
+    - echo memory_limit = 512M >> /usr/local/etc/php/php.ini
+    - php artisan config:clear
+    - php artisan migrate
+    - vendor/bin/infection --no-progress --no-interaction --ansi -j$(nproc) --configuration=infection-ci.json5 --coverage=../reports/coverage-xml
+
+deploy-testing-image:
+  stage: deploy
+  image:
+    name: amazon/aws-cli
+    entrypoint: [""]
+  services:
+    - docker:dind
+  before_script:
+    - amazon-linux-extras install docker
+    - aws --version
+    - docker --version
+  script:
+    - aws ecr get-login-password | docker login --username AWS --password-stdin $DOCKER_REGISTRY
+    - docker pull ${DOCKER_IMAGE_BUILD_TAG}
+    - docker tag ${DOCKER_IMAGE_BUILD_TAG} ${DOCKER_IMAGE_TAG}
+    - docker push ${DOCKER_IMAGE_TAG}
+  environment:
+    name: testing
+    url: https://api.customer-portal.tst.goaptive.com
+  only:
+    refs:
+      - testing
+
+deploy-staging-image:
+  stage: deploy
+  image:
+    name: amazon/aws-cli
+    entrypoint: [""]
+  services:
+    - docker:dind
+  before_script:
+    - amazon-linux-extras install docker
+    - aws --version
+    - docker --version
+  script:
+    - aws ecr get-login-password | docker login --username AWS --password-stdin $DOCKER_REGISTRY
+    - docker pull ${DOCKER_IMAGE_BUILD_TAG}
+    - docker tag ${DOCKER_IMAGE_BUILD_TAG} ${DOCKER_IMAGE_TAG}
+    - docker push ${DOCKER_IMAGE_TAG}
+  environment:
+    name: staging
+    url: https://api.customer-portal.stg.goaptive.com
+  only:
+    refs:
+      - staging
+
+deploy-production-image:
+  stage: deploy
+  image:
+    name: amazon/aws-cli
+    entrypoint: [""]
+  services:
+    - docker:dind
+  before_script:
+    - amazon-linux-extras install docker
+    - aws --version
+    - docker --version
+  script:
+    - aws ecr get-login-password | docker login --username AWS --password-stdin $DOCKER_REGISTRY
+    - docker pull ${DOCKER_IMAGE_BUILD_TAG}
+    - docker tag ${DOCKER_IMAGE_BUILD_TAG} ${DOCKER_IMAGE_RELEASE_TAG}
+    - docker push ${DOCKER_IMAGE_RELEASE_TAG}
+  environment:
+    name: production
+    url: https://api.customer-portal.prd.goaptive.com
+  rules:
+    # Semantic Version Regex: https://ihateregex.io/expr/semver/
+    - if: $CI_COMMIT_TAG =~ /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/
+      when: always

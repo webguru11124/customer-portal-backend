@@ -1,0 +1,16 @@
+includes:
+    - ./vendor/nunomaduro/larastan/extension.neon
+#    - ./vendor/canvural/larastan-strict-rules/rules.neon
+    - phpstan-baseline.neon
+
+parameters:
+    paths:
+        - app/
+
+    # Level 9 is the highest level
+    level: 8
+
+    ignoreErrors:
+        -
+            message: '#Function DDTrace\\active_span not found.#'
+            reportUnmatched: false

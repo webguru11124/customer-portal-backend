@@ -1,0 +1,8 @@
+{
+    "gitlab-token": {
+        "gitlab.com": {
+            "token": "",
+            "username": ""
+        }
+    }
+}

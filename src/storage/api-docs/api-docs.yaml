@@ -1,0 +1,3544 @@
+---
+openapi: 3.0.0
+info:
+  title: Customer Portal API
+  description: Customer Portal API
+  contact:
+    email: alex.sviachko@goaptive.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 2.33.2
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/Aptive-Environmental/Customer_Portal_API2.33.2
+  - url: https://api.customer-portal.prd.goaptive.com/api/v1
+    description: Production server (uses live data)
+  - url: https://api.customer-portal.tst.goaptive.com/api/v1
+    description: Sandbox server (uses test data)
+  - url: https://api.customer-portal.stg.goaptive.com/api/v1
+    description: Stage server (uses test data)
+  - url: http://localhost:8080/api/v1
+    description: Dev API
+tags:
+  - name: customer
+    description: Customer data calls
+  - name: transaction-setup
+    description: Transaction setup calls
+  - name: user
+    description: Logged in user data calls
+paths:
+  /customer/{accountNumber}:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - customer
+      summary: searches for customer
+      description: Returns a customer
+      operationId: customer.show
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerShowResponse'
+        "404":
+          $ref: '#/components/responses/404'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /customer/{accountNumber}/autopay:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - customer
+      summary: Get autopay settings for customer
+      operationId: customer.autopay.get
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoPay'
+        "403":
+          $ref: '#/components/responses/403'
+        "404":
+          $ref: '#/components/responses/404'
+        "412":
+          $ref: '#/components/responses/412'
+        "422":
+          $ref: '#/components/responses/422'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /customer/{accountNumber}/communication-preferences:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - customer
+      summary: Update communication preferences for customer
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/accountNumber_communicationpreferences_body'
+        required: true
+      responses:
+        "204":
+          description: Preferences were updated
+        "403":
+          $ref: '#/components/responses/403'
+        "404":
+          $ref: '#/components/responses/404'
+        "412":
+          $ref: '#/components/responses/412'
+        "422":
+          $ref: '#/components/responses/422'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /customer/{accountNumber}/payments:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - payments
+      summary: get payment ids for the customer
+      description: get payment ids for the customer
+      operationId: customer.payments.get
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+      responses:
+        "200":
+          description: Returns array of payment ids
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+                  format: int64
+              example: '[123, 124, 125]'
+        "404":
+          $ref: '#/components/responses/404'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - payments
+      summary: create payment for the customer
+      description: creates payments
+      operationId: customer.payments.add
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+      requestBody:
+        description: Payment data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentForm'
+        required: true
+      responses:
+        "200":
+          description: Returns payment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        "402":
+          $ref: '#/components/responses/402'
+        "404":
+          $ref: '#/components/responses/404'
+        "422":
+          $ref: '#/components/responses/InvalidRequestBodyError'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /customer/{accountNumber}/payments/{paymentId}:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - payments
+      summary: get payment ids for the customer
+      description: get payment ids for the customer
+      operationId: customer.payments.getpayment
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+        - name: paymentId
+          in: path
+          description: payment id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Returns payment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        "404":
+          $ref: '#/components/responses/404'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /customer/{accountNumber}/paymentprofiles:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - paymentprofiles
+      deprecated: true
+      summary: get payment profiles for the customer
+      description: get payment profiles for the customer
+      operationId: customer.paymentprofiles.get
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+        - name: statuses
+          in: query
+          description: array of statuses
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              example: valid,expired
+              enum:
+                - empty
+                - valid
+                - invalid
+                - expired
+                - failed
+                - deleted
+        - name: payment_methods
+          in: query
+          description: array of payment methods
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              example: CC,ACH
+              enum:
+                - CC
+                - ACH
+      responses:
+        "200":
+          description: Returns array of payment profiles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentProfile'
+        "404":
+          $ref: '#/components/responses/404'
+        "422":
+          $ref: '#/components/responses/InvalidRequestBodyError'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /customer/{accountNumber}/paymentprofiles/{paymentProfileId}:
+    patch:
+      security:
+        - bearerAuth: []
+      tags:
+        - paymentprofiles
+      deprecated: true
+      summary: update payment profile for the customer
+      description: update payment profile for the customer
+      operationId: customer.paymentprofiles.update
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+        - name: paymentProfileId
+          in: path
+          description: payment profile id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        description: payment profile data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePaymentProfileForm'
+        required: true
+      responses:
+        "200":
+          description: Returns link to the payment profile
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentProfileLink'
+        "404":
+          $ref: '#/components/responses/404'
+        "422":
+          $ref: '#/components/responses/InvalidRequestBodyError'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /customer/{accountNumber}/paymentprofiles/ach:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - paymentprofiles
+      description: Creates ACH payment profile
+      operationId: customer.paymentprofiles.ach.create
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+      requestBody:
+        description: payment profile data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionSetupForm'
+        required: true
+      responses:
+        "204":
+          description: Payment profile successfully created
+        "404":
+          $ref: '#/components/responses/404'
+        "422":
+          $ref: '#/components/responses/InvalidRequestBodyError'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /customer/{accountNumber}/paymentprofiles/credit-card:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - paymentprofiles
+      description: Creates credit card payment profile
+      operationId: customer.paymentprofiles.creditcard.create
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+      requestBody:
+        description: payment profile data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressForm'
+        required: true
+      responses:
+        "204":
+          description: URI to redirect customer to
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - uri
+                properties:
+                  uri:
+                    type: string
+                    description: URL to redirect customer to for saving CC information
+                    example: https://certtransaction.hostedpayments.com/?TransactionSetupID=7CB51C75-4692-48F4-953E-A33C8C8F6BAA
+        "404":
+          $ref: '#/components/responses/404'
+        "422":
+          $ref: '#/components/responses/InvalidRequestBodyError'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /customer/{accountNumber}/paymentprofiles/credit-card/{transactionSetupId}:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - paymentprofiles
+      description: Complete credit card payment profile
+      operationId: customer.paymentprofiles.creditcard.complete
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+        - name: transactionSetupId
+          in: path
+          description: Transaction Setup Id received as callback query parameter
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      requestBody:
+        description: Parameters received as callback query parameters
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionResult'
+        required: true
+      responses:
+        "204":
+          description: Payment profile successfully created
+        "205":
+          $ref: '#/components/responses/205'
+        "404":
+          $ref: '#/components/responses/404'
+        "422":
+          $ref: '#/components/responses/InvalidRequestBodyError'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+
+  /transaction-setup:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - transaction-setup
+      summary: creates transaction-setup
+      description: Creates and returns a transaction-setup
+      operationId: transaction-setup.create
+      requestBody:
+        description: Account id
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/transactionsetup_body'
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionSetup'
+        "422":
+          $ref: '#/components/responses/InvalidRequestBodyError'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /transaction-setup/{slug}:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - transaction-setup
+      summary: searches for transaction-setup
+      description: Returns a transaction-setup
+      operationId: transaction-setup.show
+      parameters:
+        - name: slug
+          in: path
+          description: Slug of transaction-setup
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionSetup'
+        "410":
+          description: Transaction setup expired
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /transaction-setup/{slug}/credit-cards:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - transaction-setup
+      summary: creates credit card transaction
+      description: creates credit card transaction
+      operationId: transaction-setup.credit-card.store
+      parameters:
+        - name: slug
+          in: path
+          description: Slug of transaction-setup
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      requestBody:
+        description: Transaction setup form data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressForm'
+        required: true
+      responses:
+        "200":
+          description: Redirect url json
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedirectUrl'
+        "422":
+          $ref: '#/components/responses/InvalidRequestBodyError'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /transaction-setup/{accountNumber}/ach:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - transaction-setup
+      summary: creates ach payment profile
+      description: creates ach payment profile
+      operationId: transaction-setup.ach.store
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+      requestBody:
+        description: payment profile data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionSetupForm'
+        required: true
+      responses:
+        "200":
+          description: Returned on successful operation
+        "422":
+          $ref: '#/components/responses/InvalidRequestBodyError'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /transaction-setup/{tsId}/add-card-profile:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - transaction-setup
+      summary: completes credit card transaction
+      description: completes credit card transaction
+      operationId: transaction-setup.credit-card.complete
+      parameters:
+        - name: tsId
+          in: path
+          description: transaction-setup id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: FEC5FE19-E6B8-4A6E-BFF8-211AE16680CD
+      requestBody:
+        description: Transaction setup data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionResult'
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentProfile'
+        "422":
+          $ref: '#/components/responses/InvalidRequestBodyError'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /payment-setup/{slug}:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - payment setup
+      summary: searches for payment-setup
+      description: Returns a payment-setup
+      operationId: payment-setup.show
+      parameters:
+        - name: slug
+          in: path
+          description: Slug of payment setup
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentSetup'
+        "404":
+          $ref: '#/components/responses/404'
+        "410":
+          description: Setup expired
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /customer/{accountNumber}/appointments:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - appointments
+      summary: Searches customer appointments
+      description: Searches customer appointments
+      operationId: customer.appointments
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+      requestBody:
+        description: Payment data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentsSearchForm'
+        required: true
+      responses:
+        "200":
+          description: Returns customer appointments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentsSearchResponse'
+        "422":
+          $ref: '#/components/responses/InvalidRequestBodyError'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /customer/{accountNumber}/appointment:
+    put:
+      security:
+        - bearerAuth: []
+      tags:
+        - appointments
+      summary: Creates new appointment
+      description: Creates new appointment
+      operationId: customer.appointments.create
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+      requestBody:
+        description: Create appointment data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/accountNumber_appointment_body'
+        required: true
+      responses:
+        "200":
+          description: Returns resource created response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentPutResponse'
+        "422":
+          $ref: '#/components/responses/InvalidRequestBodyError'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /customer/{accountNumber}/appointment/{appointmentId}:
+    patch:
+      security:
+        - bearerAuth: []
+      tags:
+        - appointments
+      summary: Updates appointment
+      description: Updates appointment
+      operationId: customer.appointments.update
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+        - name: appointmentId
+          in: path
+          description: ID of appointment
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        description: Update appointment data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/appointment_appointmentId_body'
+        required: true
+      responses:
+        "200":
+          description: Returns resource updated response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentPatchResponse'
+        "422":
+          $ref: '#/components/responses/InvalidRequestBodyError'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /customer/{accountNumber}/appointments/history:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - appointments
+      summary: Returns appointments history
+      description: Returns appointments history
+      operationId: customer.appointments.history
+      parameters:
+        - name: accountNumber
+          in: path
+          description: ID of customer
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Returns customer appointments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/appointments_history_response'
+        "422":
+          description: Invalid request body error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorMessage'
+        "5XX":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+  /customer/{accountNumber}/appointments/upcoming:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - appointments
+      summary: Returns upcoming appointments
+      description: Returns upcoming customer appointments with status 'Pending'
+      operationId: customer.appointments.upcoming
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+        - name: limit
+          in: query
+          description: Set limit of returned appointments amount
+          required: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Returns upcoming customer appointments with status 'Pending'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentsSearchResponse'
+        "422":
+          description: Invalid request body error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorMessage'
+        "5XX":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+  /customer/{accountNumber}/appointment/{appointmentID}:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - appointments
+      summary: Returns single appointmment
+      description: Returns an appointmment found by ID
+      operationId: customer.appointments.find
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+        - name: appointmentID
+          in: path
+          description: ID of appointment
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Returns an appointmment found by ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentsFindResponse'
+        "422":
+          description: Invalid request body error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorMessage'
+        "5XX":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+  /customer/{accountNumber}/documents:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - customer
+        - documents
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+      summary: Get documents list for user
+      description: Get documents for user, does not include documents associated with appointments.
+      operationId: user.documents.get
+      responses:
+        "200":
+          description: Documents list successfully fetched
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - links
+                  - data
+                properties:
+                  links:
+                    type: object
+                    properties:
+                      self:
+                        type: string
+                        example: '/api/v1/customer/9876645/documents'
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Document'
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+        "412":
+          $ref: "#/components/responses/412"
+        "422":
+          $ref: "#/components/responses/422"
+        "5XX":
+          $ref: "#/components/responses/5XX"
+  /customer/{accountNumber}/documents/{documentId}/download:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - customer
+        - documents
+      summary: Download customer document
+      description: Downloads customer document with content disposition set to attachment
+      operationId: customer.documents.download
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+        - name: documentId
+          in: path
+          description: ID of the document
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Binary document content
+        "403":
+          $ref: '#/components/responses/403'
+        "404":
+          $ref: '#/components/responses/404'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /customer/{accountNumber}/invoices:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - invoices
+      summary: get invoices for the customer
+      description: get invoices for the customer
+      operationId: customer.invoices.get
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+        - name: dueOnly
+          in: query
+          description: Set to true to return due invoices only
+          required: false
+          explode: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Returns array of invoices
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoices'
+        "404":
+          $ref: '#/components/responses/404'
+        "422":
+          $ref: '#/components/responses/InvalidRequestBodyError'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /emailcheck:
+    post:
+      tags:
+        - email
+      summary: check email
+      description: check if customer with email exists
+      operationId: emailcheck
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  example: 'test@test.com'
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - exists
+                  - has_logged_in
+                  - has_registered
+                  - completed_initial_service
+                  - status
+                properties:
+                  links:
+                    type: object
+                    properties:
+                      exists:
+                        type: boolean
+                        description: True if email exists
+                        example: true
+                      has_logged_in:
+                        type: boolean
+                        description: True if user has ever logged into CXP
+                        example: true
+                      has_registered:
+                        type: boolean
+                        nullable: true
+                        description: True if user has registered account with Auth0
+                        example: true
+                      completed_initial_service:
+                        type: boolean
+                        nullable: true
+                        description: True if user completed initial service
+                        example: true
+                      status:
+                        type: boolean
+                        nullable: true
+                        description: True if subscription is active
+                        example: true
+        "422":
+          $ref: '#/components/responses/InvalidRequestBodyError'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /resend-email-verification:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - email
+      summary: Resend verification email
+      description: Trigger Auth0 email verification for customer
+      operationId: resend-verification-email
+      responses:
+        "204":
+          description: successful operation
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /user/accounts:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - user
+      summary: List accounts for user
+      description: List accounts for user currently logged in
+      operationId: user.accounts.show
+      responses:
+        "200":
+          description: Accounts list retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PestRoutesAccount'
+        "403":
+          $ref: '#/components/responses/403'
+        "412":
+          $ref: '#/components/responses/412'
+        "422":
+          $ref: '#/components/responses/422'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /user/accounts/{accountNumber}/paymentprofiles:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - user
+        - paymentprofiles
+      summary: List available payment methods for logged in user's account
+      description: List available payment methods for logged in user's account, response includes data from PestRoutes API
+      operationId: user.accounts.paymentprofiles.get
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+        - name: statuses
+          in: query
+          description: array of statuses
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              example: valid,expired
+              enum:
+                - empty
+                - valid
+                - invalid
+                - expired
+                - failed
+                - deleted
+        - name: payment_methods
+          in: query
+          description: array of payment methods
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              example: CC,ACH
+              enum:
+                - CC
+                - ACH
+      responses:
+        "200":
+          description: List of payment methods
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentProfilesGet'
+        "401":
+          $ref: '#/components/responses/403'
+        "412":
+          $ref: '#/components/responses/412'
+        "422":
+          $ref: '#/components/responses/422'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /user/accounts/{accountNumber}/paymentprofiles/{paymentProfileId}:
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - user
+        - paymentprofiles
+      summary: Delete payment method for user
+      description: Delete payment method for the user currently logged in
+      operationId: user.accounts.paymentprofiles.delete
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+        - name: paymentProfileId
+          in: path
+          description: payment profile id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: Payment method deleted
+        "401":
+          $ref: '#/components/responses/403'
+        "404":
+          $ref: '#/components/responses/404'
+        "409":
+          $ref: '#/components/responses/409'
+        "412":
+          $ref: '#/components/responses/412'
+        "422":
+          $ref: '#/components/responses/422'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /user/accounts/{accountNumber}/appointments/{appointmentId}:
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - appointments
+      summary: Cancel reservice appointment for user
+      description: Cancel reservice appointment for the user currently logged in
+      operationId: user.accounts.appointments.cancel
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+        - name: appointmentId
+          in: path
+          description: ID of appointment
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: Appointment cancelled
+        "403":
+          $ref: '#/components/responses/403'
+        "404":
+          $ref: '#/components/responses/404'
+        "412":
+          $ref: '#/components/responses/412'
+        "422":
+          $ref: '#/components/responses/422'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /customer/{accountNumber}/appointments/{appointmentId}:
+    delete:
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - appointments
+      summary: Cancel reservice appointment for customer
+      description: Cancel reservice appointment for the customer currently logged in
+      operationId: customer.appointments.cancel
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+        - name: appointmentId
+          in: path
+          description: ID of appointment
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: Appointment cancelled
+        "403":
+          $ref: '#/components/responses/403'
+        "404":
+          $ref: '#/components/responses/404'
+        "412":
+          $ref: '#/components/responses/412'
+        "422":
+          $ref: '#/components/responses/422'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /customer/{accountNumber}/spots:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - spots
+      summary: Searches available appointment spots for customer
+      description: Searches available appointment spots for customer
+      operationId: customer.spots.search
+      parameters:
+        - name: accountNumber
+          in: path
+          description: ID of customer
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        description: Search spots data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpotsSearchForm'
+        required: true
+      responses:
+        "200":
+          description: Returns available spots
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpotsSearchResponse'
+        "422":
+          $ref: '#/components/responses/InvalidRequestBodyError'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /customer/{accountNumber}/subscriptions:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - subscriptions
+      summary: get subscriptions for the customer
+      description: get subscriptions for the customer
+      operationId: customer.subscriptions.get
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+      responses:
+        "200":
+          description: Returns array of subscriptions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionsGetResponse'
+        "404":
+          $ref: '#/components/responses/404'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+  /customer/{accountNumber}/subscription/createFrozen:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - subscriptions
+      summary: Create frozen subscription with addons
+      description: Create frozen subscription with addons
+      operationId: customer.subscription.createFrozen
+      parameters:
+        - $ref: '#/components/parameters/accountNumber'
+      requestBody:
+        description: Subscription data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FrozenSubscriptionRequestBody'
+        required: true
+      responses:
+        "200":
+          description: Returns newly created subscription id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FrozenSubscriptionResponse'
+        "422":
+          $ref: '#/components/responses/InvalidRequestBodyError'
+        "5XX":
+          $ref: '#/components/responses/5XX'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    AutoPay:
+      type: object
+      properties:
+        links:
+          $ref: '#/components/schemas/AutoPay_links'
+        data:
+          $ref: '#/components/schemas/AutoPay_data'
+    AutoPay_links:
+      type: object
+      properties:
+        self:
+          type: string
+          example: /api/v1/customer/2550260/autopay
+    AutoPay_data:
+      type: array
+      items:
+        $ref: '#/components/schemas/AutoPayItem'
+    AutoPayItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 993326
+        type:
+          type: string
+          example: Autopay
+        attributes:
+          $ref: '#/components/schemas/AutoPayAttributes'
+    AutoPayAttributes:
+      required:
+        - isEnabled
+      type: object
+      properties:
+        isEnabled:
+          type: boolean
+          description: True if autopay is enabled for the customer
+        planName:
+          type: string
+          description: subscription plan name
+        nextPaymentAmount:
+          type: number
+          description: Subscription recurring charge
+          format: float
+        nextPaymentDate:
+          type: string
+          description: Date of the next payment
+          format: date
+        cardType:
+          type: string
+          nullable: true
+          description: Card type, e.g. Visa or Mastercard
+        cardLastFour:
+          type: string
+          nullable: true
+          description: Last 4 digits of the card number
+        preferredBillingDate:
+          type: string
+          nullable: true
+          description: Next preferred billing day if specified in PestRoutes
+      description: Customer autopay settings
+    CustomerAttributes:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 993326
+        name:
+          type: string
+          example: Dan
+        firstName:
+          type: string
+          example: Dan
+        lastName:
+          type: string
+          example: Gracious
+        email:
+          type: string
+          example: dang@test.com
+        phoneNumber:
+          type: string
+          example: "2587415877"
+        statusName:
+          type: string
+          example: Active
+        officeId:
+          type: integer
+          format: int64
+          example: 1
+        isPhoneNumberValid:
+          type: boolean
+          example: false
+          default: false
+        isEmailValid:
+          type: boolean
+          example: false
+          default: false
+        autoPay:
+          type: boolean
+          example: false
+          default: false
+        autoPayProfileLastFour:
+          type: string
+          nullable: true
+          example: "1234"
+        balanceCents:
+          type: integer
+          format: int64
+          example: 1099
+        dueDate:
+          type: string
+          format: date
+          nullable: true
+          example: 2022-08-21
+        isDueForStandardTreatment:
+          type: boolean
+          nullable: true
+          example: true
+        lastTreatmentDate:
+          type: string
+          format: date
+          nullable: true
+          example: 2022-08-01
+        isOnMonthlyBilling:
+          type: boolean
+          example: true
+
+    Customer:
+      required:
+        - email
+        - first_name
+        - id
+        - last_name
+        - name
+        - officeID
+        - office_id
+        - phone_number
+        - status_name
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 993326
+        name:
+          type: string
+          example: Dan
+        first_name:
+          type: string
+          example: Dan
+        last_name:
+          type: string
+          example: Gracious
+        email:
+          type: string
+          example: dang@test.com
+        phone_number:
+          type: string
+          example: "2587415877"
+        status_name:
+          type: string
+          example: Active
+        office_id:
+          type: integer
+          format: int64
+          example: 1
+        officeID:
+          type: integer
+          format: int64
+          example: 1
+        is_phone_number_valid:
+          type: boolean
+          example: false
+          default: false
+        is_email_valid:
+          type: boolean
+          example: false
+          default: false
+        auto_pay:
+          type: boolean
+          example: false
+          default: false
+        auto_pay_profile_last_four:
+          type: string
+          nullable: true
+          example: "1234"
+        payment_profile_id:
+          type: integer
+          format: int64
+          example: 12345678
+        balance_cents:
+          type: integer
+          format: int64
+          example: 1099
+        dueDate:
+          type: string
+          format: date
+          nullable: true
+          example: 2022-08-21
+        isDueForStandardTreatment:
+          type: boolean
+          nullable: true
+          example: true
+        lastTreatmentDate:
+          type: string
+          format: date
+          nullable: true
+          example: 2022-08-01
+    Payment:
+      required:
+        - amount_cents
+        - customer_id
+        - id
+        - payment_method
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 993326
+        customer_id:
+          type: integer
+          format: int64
+          example: 2550260
+        amount_cents:
+          type: integer
+          format: int64
+          example: 4995
+        payment_method:
+          type: string
+          description: Payment Method Credit Card or ACH
+          example: CC
+          enum:
+            - CC
+            - ACH
+        date:
+          type: string
+          example: 2022-06-22 03:40:54
+    PaymentProfile:
+      required:
+        - billingName
+        - customer_id
+        - description
+        - id
+        - lastFour
+        - paymentMethod
+        - status
+        - cardType
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 993326
+        customerID:
+          type: integer
+          format: int64
+          example: 2550260
+        description:
+          type: string
+          example: This is description
+        billing_name:
+          type: string
+          example: CC For Payment
+        payment_method:
+          type: integer
+          description: Payment Method Credit Card (1) or ACH (2)
+          example: 1
+          enum:
+            - 1
+            - 2
+        lastFour:
+          type: string
+          nullable: true
+          example: "1234"
+        expMonth:
+          type: string
+          nullable: true
+          example: "12"
+        expYear:
+          type: string
+          nullable: true
+          example: "23"
+        isExpired:
+          type: boolean
+          nullable: true
+          example: true
+        isValid:
+          type: boolean
+          nullable: true
+          example: true
+        status:
+          type: integer
+          example: 1
+          description: -1 = soft deleted, 0 = empty, 1 = valid, 2 = invalid, 3 = expired, 4 = last transaction failed
+          enum:
+            - -1
+            - 0
+            - 1
+            - 2
+            - 3
+            - 4
+        cardType:
+          type: string
+          nullable: true
+          example: "Mastercard"
+        accountNumber:
+          type: string
+          nullable: true
+          example: "1234"
+          description: ACH only - masked account number
+        routingNumber:
+          type: string
+          nullable: true
+          example: "1234567"
+          description: ACH only - routing number
+        merchantID:
+          type: string
+          example: "d6e4d2d0-1111-2222-3333-8914f4b24021"
+        accountType:
+          type: integer
+          example: 1
+          description: ACH only - 0 = personal, 1 = business
+        checkType:
+          type: integer
+          example: 1
+          description: ACH only - 0=checking, 1=savings
+        bankName:
+          type: string
+          example: "test bank"
+          description: ACH only
+        billingAddress1:
+          type: string
+          example: "Green street 3-12"
+        billingAddress2:
+          type: string
+          example: "office 123"
+        billingCity:
+          type: string
+          example: "League City"
+        billingEmail:
+          type: string
+          example: "user@goaptive.com"
+        billingPhone:
+          type: string
+          example: "3619911234"
+        billingState:
+          type: string
+          example: "TX"
+        billingZip:
+          type: string
+          example: "12345"
+    Invoices:
+      type: object
+      properties:
+        links:
+          $ref: '#/components/schemas/Invoices_links'
+        data:
+          $ref: '#/components/schemas/Invoices_data'
+    Invoices_links:
+      type: object
+      properties:
+        self:
+          type: string
+          example: /api/v1/customer/2550260/invoices
+    Invoices_data:
+      type: array
+      items:
+        $ref: '#/components/schemas/Invoice'
+
+    Invoice:
+      type: object
+      required:
+        - type
+        - id
+        - attributes
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 993326
+        type:
+          type: string
+          example: "Ticket"
+        attributes:
+          type: object
+          required:
+            - customerId
+            - billToAccountId
+            - officeId
+            - dateCreated
+            - invoiceDate
+            - dateUpdated
+            - active
+            - subTotal
+            - taxAmount
+            - total
+            - serviceCharge
+            - isServiceTaxable
+            - productionValue
+            - taxRate
+            - appointmentId
+            - balance
+            - subscriptionId
+            - autoGenerated
+            - autoGeneratedType
+            - renewalId
+            - serviceId
+            - items
+            - invoiceNumber
+            - templateType
+            - glNumber
+            - appointmentDate
+          properties:
+            customerId:
+              type: integer
+              format: int64
+              example: 2550260
+            billToAccountId:
+              type: integer
+              format: int64
+              example: 2550260
+            officeId:
+              type: integer
+              format: int64
+              example: 2550260
+            dateCreated:
+              type: string
+              format: date-time
+              example: "2022-06-22T03:40:54+00:00"
+            invoiceDate:
+              type: string
+              format: date-time
+              example: "2022-06-22T03:40:54+00:00"
+            dateUpdated:
+              type: string
+              format: date-time
+              example: "2022-06-22T03:40:54+00:00"
+            active:
+              type: integer
+              example: 1
+            subTotal:
+              type: number
+              example: 249.99
+            taxAmount:
+              type: number
+              example: 25.00
+            total:
+              type: number
+              example: 249.99
+            serviceCharge:
+              type: number
+              example: 249.99
+            isServiceTaxable:
+              type: boolean
+              example: true
+            productionValue:
+              type: integer
+              example: -1
+            taxRate:
+              type: number
+              example: 25.00
+            appointmentId:
+              type: integer
+              format: int64
+              example: 2550260
+            balance:
+              type: number
+              example: 25.00
+            subscriptionId:
+              type: integer
+              format: int64
+              example: 2550260
+              nullable: true
+            autoGenerated:
+              type: boolean
+              example: true
+              nullable: true
+            autoGeneratedType:
+              type: string
+              example: "NA"
+            renewalId:
+              type: integer
+              format: int64
+              example: 2550260
+              nullable: true
+            serviceId:
+              type: integer
+              format: int64
+              example: 2550260
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Item'
+            invoiceNumber:
+              type: integer
+              format: int64
+              example: 2550260
+            templateType:
+              type: string
+              example: "NA"
+            glNumber:
+              type: integer
+              format: int64
+              example: 2550260
+              nullable: true
+            appointmentDate:
+              type: string
+              format: date-time
+              example: "2022-06-22T03:40:54+00:00"
+    Item:
+      required:
+        - amount
+        - category
+        - code
+        - creditTo
+        - description
+        - itemID
+        - productID
+        - quantity
+        - taxable
+        - ticketID
+      type: object
+      properties:
+        itemID:
+          type: integer
+          format: int64
+          example: 8352531
+        ticketID:
+          type: integer
+          format: int64
+          example: 21941617
+        description:
+          type: string
+          example: Aphid Initial
+        quantity:
+          type: integer
+          format: int64
+          example: 1
+        amount:
+          type: number
+          example: 15.95
+        category:
+          type: string
+          example: Specialty Pests
+        code:
+          type: string
+          example: Aphids
+        productID:
+          type: integer
+          format: int64
+          example: 4
+        taxable:
+          type: integer
+          format: int64
+          example: 1
+        creditTo:
+          type: integer
+          format: int64
+          example: 1
+    PaymentProfileLink:
+      required:
+        - data
+        - links
+      type: object
+      properties:
+        links:
+          $ref: '#/components/schemas/PaymentProfileLink_links'
+        data:
+          $ref: '#/components/schemas/PaymentProfileLink_data'
+    AddressForm:
+      required:
+        - auto_pay
+        - billing_address_line_1
+        - billing_city
+        - billing_name
+        - billing_state
+        - billing_zip
+      type: object
+      properties:
+        billing_name:
+          type: string
+          example: Name
+        billing_address_line_1:
+          type: string
+          example: Woods Gulch
+        billing_address_line_2:
+          type: string
+          example: M12-442
+        billing_city:
+          type: string
+          example: Missoula
+        billing_state:
+          type: string
+          example: MT
+        billing_zip:
+          type: string
+          example: "59802"
+        auto_pay:
+          type: integer
+          format: int64
+          example: 1
+          default: 0
+    TransactionSetupForm:
+      required:
+        - account_number
+        - account_number_confirmation
+        - auto_pay
+        - bank_name
+        - billing_address_line_1
+        - billing_city
+        - billing_name
+        - billing_state
+        - billing_zip
+        - check_type
+        - customer_id
+        - routing_number
+      type: object
+      properties:
+        customer_id:
+          type: integer
+          format: int64
+          example: 993326
+        billing_name:
+          type: string
+          example: Name
+        billing_address_line_1:
+          type: string
+          example: Woods Gulch
+        billing_address_line_2:
+          type: string
+          example: M12-442
+        billing_city:
+          type: string
+          example: Missoula
+        billing_state:
+          type: string
+          example: MT
+        billing_zip:
+          type: string
+          example: "59802"
+        bank_name:
+          type: string
+        account_number:
+          type: integer
+          format: int64
+          example: 2550260
+        account_number_confirmation:
+          type: integer
+          format: int64
+          example: 2550260
+        routing_number:
+          type: string
+        check_type:
+          type: integer
+          format: int64
+          example: 0
+        account_type:
+          type: integer
+          format: int64
+          example: 1
+        auto_pay:
+          type: integer
+          format: int64
+          example: 1
+          default: 0
+    PaymentForm:
+      required:
+        - amount_cents
+        - payment_method
+      type: object
+      properties:
+        amount_cents:
+          type: integer
+          format: int64
+          example: 993326
+        payment_method:
+          type: string
+          description: Payment Method Credit Card or ACH
+          example: CC
+          enum:
+            - CC
+            - ACH
+        payment_profile_id:
+          type: integer
+          format: int64
+          example: 3993326
+    PestRoutesPaymentProfile:
+      type: object
+      properties:
+        links:
+          $ref: '#/components/schemas/PestRoutesPaymentProfile_links'
+        data:
+          $ref: '#/components/schemas/PestRoutesPaymentProfile_data'
+    PestRoutesPaymentProfile_links:
+      type: object
+      properties:
+        self:
+          type: string
+          example: /api/v1/user/accounts/122713160/paymentprofiles
+    PestRoutesPaymentProfile_data_attributes:
+      type: object
+      properties:
+        customerId:
+          type: integer
+          example: 123456778
+        officeId:
+          type: integer
+          example: 12
+        createdBy:
+          type: integer
+          example: 12345
+        description:
+          type: string
+          nullable: true
+        dateCreated:
+          type: string
+          format: datetime
+        status:
+          type: integer
+          example: 1
+        statusNotes:
+          type: string
+          nullable: true
+        billingName:
+          type: string
+          nullable: true
+        primaryBillingAddress:
+          type: string
+          nullable: true
+        secondaryBillingAddress:
+          type: string
+          nullable: true
+        billingCountryCode:
+          type: string
+          nullable: true
+        billingCity:
+          type: string
+          nullable: true
+        billingState:
+          type: string
+          nullable: true
+        billingZip:
+          type: string
+          nullable: true
+        billingPhone:
+          type: string
+          nullable: true
+        billingEmail:
+          type: string
+          nullable: true
+        paymentMethod:
+          type: integer
+        gateway:
+          type: string
+        merchantId:
+          type: string
+          nullable: true
+        merchantToken:
+          type: string
+          nullable: true
+        cardLastFour:
+          type: string
+          nullable: true
+        cardExpirationMonth:
+          type: string
+          nullable: true
+        cardExpirationYear:
+          type: string
+          nullable: true
+        cardType:
+          type: string
+          nullable: true
+        bankName:
+          type: string
+          nullable: true
+        accountNumber:
+          type: string
+          nullable: true
+        routingNumber:
+          type: string
+          nullable: true
+        checkType:
+          type: integer
+          nullable: true
+        accountType:
+          type: integer
+          nullable: true
+        failedAttempts:
+          type: integer
+        sentFailureDate:
+          type: string
+          format: datetime
+          nullable: true
+        lastAttemptDate:
+          type: string
+          format: datetime
+          nullable: true
+        paymentHoldDate:
+          type: string
+          format: datetime
+          nullable: true
+        retryPoints:
+          type: integer
+        initialTransactionId:
+          type: string
+        lastDeclineType:
+          type: string
+        isExpired:
+          type: boolean
+          nullable: true
+    PestRoutesPaymentProfile_data:
+      type: object
+      properties:
+        type:
+          type: string
+          example: PaymentProfile
+        id:
+          type: integer
+          example: 93939421
+        attributes:
+          $ref: '#/components/schemas/PestRoutesPaymentProfile_data_attributes'
+    PestRoutesAccount:
+      type: object
+      properties:
+        links:
+          $ref: '#/components/schemas/PestRoutesAccount_links'
+        data:
+          $ref: '#/components/schemas/PestRoutesAccount_data'
+    PestRoutesAccount_links:
+      type: object
+      properties:
+        self:
+          type: string
+          example: /api/v1/user/accounts
+    PestRoutesAccount_data:
+      type: object
+      properties:
+        type:
+          type: string
+          example: Customer
+        id:
+          type: integer
+          example: 93939421
+        attributes:
+          $ref: '#/components/schemas/PestRoutesAccount_data_attributes'
+    PestRoutesAddress:
+      type: object
+      properties:
+        countryCode:
+          type: string
+          example: US
+        address:
+          type: string
+          nullable: true
+          example: 1 Infinite Loop
+        city:
+          type: string
+          nullable: true
+          example: Cupertino
+        stateCode:
+          type: string
+          nullable: true
+          example: CA
+        zip:
+          type: string
+          nullable: true
+          example: "19804"
+    PestRoutesPhone:
+      type: object
+      properties:
+        phone:
+          type: string
+        extension:
+          type: string
+        isPrimary:
+          type: boolean
+    TransactionSetup:
+      required:
+        - account_number
+        - billing_address_line_1
+        - billing_address_line_2
+        - billing_city
+        - billing_name
+        - billing_state
+        - billing_zip
+        - id
+        - slug
+        - status
+        - transaction_setup_id
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 993326
+        slug:
+          type: string
+          example: TG25lX
+        account_number:
+          type: integer
+          format: int64
+          example: 2550260
+        transaction_setup_id:
+          type: string
+        status:
+          type: string
+          example: initiated
+          enum:
+            - initiated
+            - generated
+            - complete
+            - failed_authorization
+        last_4:
+          type: string
+        billing_name:
+          type: string
+        billing_address_line_1:
+          type: string
+        billing_address_line_2:
+          type: string
+        billing_city:
+          type: string
+        billing_state:
+          type: string
+        billing_zip:
+          type: string
+        auto_pay:
+          type: boolean
+          example: false
+          default: false
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        deleted_at:
+          type: string
+          format: date-time
+        customer:
+          $ref: '#/components/schemas/Customer'
+    PaymentProfilesGet:
+      type: object
+      properties:
+        links:
+          $ref: '#/components/schemas/PaymentProfilesGetLinks'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PestRoutesPaymentProfile'
+    PaymentSetup:
+      required:
+        - account_number
+        - id
+        - slug
+        - status
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 993326
+        slug:
+          type: string
+          example: TG25lX
+        account_number:
+          type: integer
+          format: int64
+          example: 2550260
+        status:
+          type: string
+          example: initiated
+          enum:
+            - initiated
+            - generated
+            - complete
+            - failed_authorization
+        customer:
+          $ref: '#/components/schemas/Customer'
+    TransactionResult:
+      required:
+        - HostedPaymentStatus
+        - ValidationCode
+      type: object
+      properties:
+        HostedPaymentStatus:
+          type: string
+          example: Error
+        ValidationCode:
+          type: string
+          example: 89F5694DC8814A73
+        PaymentAccountID:
+          type: string
+    ErrorMessage:
+      required:
+        - message
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+          example: Fatal error
+    UpdatePaymentProfileForm:
+      type: object
+      properties:
+        billingFName:
+          type: string
+          example: John
+        billingLName:
+          type: string
+          example: Doe
+        billingAddressLine1:
+          type: string
+        billingAddressLine2:
+          type: string
+        billingCity:
+          type: string
+        billingState:
+          type: string
+        billingZip:
+          type: string
+        expMonth:
+          type: integer
+          example: 1
+        expYear:
+          type: integer
+          example: 11
+    ValidationErrorMessage:
+      required:
+        - errors
+        - message
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+          example: The name field is required. (and 2 more errors)
+        errors:
+          maxProperties: 12
+          minProperties: 1
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+              example: The name field is required.
+          description: Error messages
+      description: Validation error list
+      example: '{"message":"The billing name field is required.","errors":{"billing_name": ["The billing name field is required."],"billing_state":["The billing state must be 2 characters.","The billing state must only contain letters."]}}'
+    RedirectUrl:
+      required:
+        - url
+      type: object
+      properties:
+        url:
+          type: string
+          description: redirect url
+          example: https://test.test.com/?TransactionSetupID=testid12345
+    transactionsetup_body:
+      required:
+        - accountId
+      type: object
+      properties:
+        accountId:
+          type: string
+    Appointments:
+      type: array
+      items:
+        $ref: '#/components/schemas/Appointment'
+    Appointments_with_related_documents:
+      type: array
+      items:
+        $ref: '#/components/schemas/Appointment_with_related_documents'
+    Appointment:
+      type: object
+      properties:
+        type:
+          type: string
+          nullable: true
+          example: Appointment
+        id:
+          type: integer
+          format: int64
+          example: 22389016
+        attributes:
+          $ref: '#/components/schemas/Appointment_attributes'
+    Appointment_with_related_documents:
+      type: object
+      properties:
+        type:
+          type: string
+          nullable: true
+          example: Appointment
+        id:
+          type: integer
+          format: int64
+          example: 22389016
+        attributes:
+          $ref: '#/components/schemas/Appointment_attributes'
+        relationships:
+          type: object
+          properties:
+            documents:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        example: Document
+                      id:
+                        type: integer
+                        format: int64
+                        example: 2346234
+    AppointmentsSearchForm:
+      type: object
+      properties:
+        date_start:
+          type: string
+          nullable: true
+          example: 2022-01-01
+        date_end:
+          type: string
+          nullable: true
+          example: 2022-01-31
+        status:
+          type: array
+          items:
+            type: integer
+          nullable: true
+          example: [0,1]
+    Spots:
+      type: array
+      items:
+        $ref: '#/components/schemas/Spot'
+    Spot:
+      type: object
+      properties:
+        type:
+          type: string
+          nullable: true
+          example: Spot
+        id:
+          type: integer
+          format: int64
+          example: 2346234
+        attributes:
+          $ref: '#/components/schemas/Spot_attributes'
+    SpotsSearchForm:
+      required:
+        - date_end
+        - date_start
+      type: object
+      properties:
+        date_start:
+          type: string
+          example: 2022-01-01
+        date_end:
+          type: string
+          example: 2022-01-31
+    PaymentProfilesGetLinks:
+      type: object
+      properties:
+        self:
+          type: string
+          example: /api/v1/user/accounts/123456778/paymentprofiles
+    CustomerShowResponse:
+      type: object
+      properties:
+        links:
+          $ref: '#/components/schemas/CustomerShowLinks'
+        data:
+          type: object
+          properties:
+            type:
+              type: string
+              example: 'Customer'
+            id:
+              type: integer
+              example: 2435243542
+            attributes:
+              $ref: '#/components/schemas/CustomerAttributes'
+
+    AppointmentsSearchResponse:
+      type: object
+      properties:
+        links:
+          $ref: '#/components/schemas/AppointmentsSearchLinks'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Appointments'
+    AppointmentsFindResponse:
+      type: object
+      properties:
+        links:
+          type: object
+          properties:
+            self:
+              type: string
+              example: '/api/v1/customer/2561942/appointment/22389593'
+        data:
+          $ref: '#/components/schemas/Appointment'
+    SpotsSearchResponse:
+      type: object
+      properties:
+        links:
+          $ref: '#/components/schemas/SpotsSearchLinks'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Spots'
+    PaymentProfileLink_links:
+      type: object
+      properties:
+        self:
+          type: string
+    PaymentProfileLink_data:
+      type: object
+      properties:
+        type:
+          type: string
+          example: PaymentProfile
+        id:
+          type: string
+          example: "4566496"
+    PestRoutesAccount_data_attributes_billingInformation:
+      type: object
+      properties:
+        accountId:
+          type: integer
+        companyName:
+          type: string
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Smith
+        address:
+          $ref: '#/components/schemas/PestRoutesAddress'
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+    PestRoutesAccount_data_attributes_source:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+    PestRoutesAccount_data_attributes_customerFlags:
+      type: object
+      properties:
+        customerId:
+          type: integer
+        flag:
+          type: string
+        value:
+          type: string
+    PestRoutesAccount_data_attributes:
+      type: object
+      properties:
+        officeId:
+          type: integer
+          example: 19
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Smith
+        companyName:
+          type: string
+          nullable: true
+          example: A Company
+        spouse:
+          type: string
+          nullable: true
+        isCommercial:
+          type: boolean
+          example: false
+        status:
+          type: integer
+          description: 1 = Active, 0 = Inactive
+          example: 1
+        email:
+          type: string
+          nullable: true
+          example: js@example.com
+        phones:
+          type: array
+          items:
+            $ref: '#/components/schemas/PestRoutesPhone'
+        address:
+          $ref: '#/components/schemas/PestRoutesAddress'
+        billingInformation:
+          $ref: '#/components/schemas/PestRoutesAccount_data_attributes_billingInformation'
+        latitude:
+          type: number
+          format: float
+        longitude:
+          type: number
+          format: float
+        squareFeet:
+          type: integer
+        addedBy:
+          type: integer
+        dateAdded:
+          type: string
+          format: date
+        dateCancelled:
+          type: string
+          format: date
+        dateUpdated:
+          type: string
+          format: date
+        source:
+          $ref: '#/components/schemas/PestRoutesAccount_data_attributes_source'
+        autoPay:
+          type: string
+        preferredTechId:
+          type: integer
+          nullable: true
+        paidInAdvance:
+          type: boolean
+        subscriptionIds:
+          type: array
+          items:
+            type: integer
+        balance:
+          type: number
+          format: float
+        balanceAge:
+          type: integer
+        responsibleBalance:
+          type: number
+          format: float
+        responsibleBalanceAge:
+          type: integer
+        customerLink:
+          type: string
+          nullable: true
+        masterAccountId:
+          type: integer
+          nullable: true
+        preferredDayForBilling:
+          type: integer
+        paymentHoldDate:
+          type: string
+          format: date
+          nullable: true
+        mostRecentCardLastFour:
+          type: string
+        mostRecentCardExpirationDate:
+          type: string
+        regionId:
+          type: integer
+        mapCode:
+          type: string
+          nullable: true
+        mapPage:
+          type: string
+          nullable: true
+        specialScheduling:
+          type: string
+          nullable: true
+        taxRate:
+          type: number
+          format: float
+        smsReminders:
+          type: boolean
+        phoneReminders:
+          type: boolean
+        emailReminders:
+          type: boolean
+        customerSource:
+          $ref: '#/components/schemas/PestRoutesAccount_data_attributes_source'
+        maxMonthlyCharge:
+          type: number
+          format: float
+        county:
+          type: string
+          nullable: true
+        useStructures:
+          type: boolean
+        isMultiUnit:
+          type: boolean
+        autoPayPaymentProfileId:
+          type: integer
+          nullable: true
+        divisionId:
+          type: integer
+          nullable: true
+        appointmentIds:
+          type: array
+          items:
+            type: integer
+        ticketIds:
+          type: array
+          items:
+            type: integer
+        paymentIds:
+          type: array
+          items:
+            type: integer
+        unitIds:
+          type: array
+          items:
+            type: integer
+        customerFlags:
+          type: array
+          items:
+            $ref: '#/components/schemas/PestRoutesAccount_data_attributes_customerFlags'
+        portalLogin:
+          type: string
+          nullable: true
+        portalLoginExpires:
+          type: string
+          format: date
+          nullable: true
+    Appointment_attributes:
+      type: object
+      properties:
+        officeId:
+          type: integer
+          format: int64
+          example: 1
+        customerId:
+          type: integer
+          format: int64
+          example: 2561669
+        subscriptionId:
+          type: integer
+          format: int64
+          example: 2634064
+        subscriptionRegionId:
+          type: integer
+          format: int64
+          example: 0
+        routeId:
+          type: integer
+          format: int64
+          example: 3662041
+        spotId:
+          type: integer
+          format: int64
+          example: 0
+        start:
+          type: string
+          example: 2022-07-29T16:00:00.000000+0000
+        end:
+          type: string
+          example: 2022-07-29T16:00:00.000000+0000
+        duration:
+          type: string
+          example: "15-30 min (times may vary)"
+        serviceTypeId:
+          type: integer
+          format: int64
+          example: 1801
+        dateAdded:
+          type: string
+          example: 2022-07-29T16:00:00.000000+0000
+        employeeId:
+          type: integer
+          format: int64
+          example: 354931
+        status:
+          type: integer
+          format: int64
+          example: 0
+        callAhead:
+          type: integer
+          format: int64
+          example: 0
+        isInitial:
+          type: boolean
+          example: true
+        completedBy:
+          type: integer
+          format: int64
+          nullable: true
+          example: 3436456
+        servicedBy:
+          type: integer
+          format: int64
+          nullable: true
+          example: 3436456
+        dateCompleted:
+          type: string
+          nullable: true
+          example: 2022-07-29T16:00:00.000000+0000
+        notes:
+          type: string
+          nullable: true
+          example: Notes
+        officeNotes:
+          type: string
+          nullable: true
+          example: Notes
+        timeIn:
+          type: string
+          nullable: true
+          example: 2022-07-29T16:00:00.000000+0000
+        timeOut:
+          type: string
+          nullable: true
+          example: 2022-07-29T16:00:00.000000+0000
+        checkIn:
+          type: string
+          nullable: true
+          example: 2022-07-29T16:00:00.000000+0000
+        checkOut:
+          type: string
+          nullable: true
+          example: 2022-07-29T16:00:00.000000+0000
+        windSpeed:
+          type: integer
+          format: int64
+          nullable: true
+          example: 5
+        windDirection:
+          type: string
+          format: int64
+          nullable: true
+          example: "5"
+        temperature:
+          type: number
+          nullable: true
+          example: 25.5
+        amountCollected:
+          type: number
+          nullable: true
+          example: 25.5
+        paymentMethod:
+          type: integer
+          format: int64
+          nullable: true
+          example: 2
+        servicedInterior:
+          type: boolean
+          nullable: true
+          example: true
+        ticketId:
+          type: integer
+          nullable: true
+          example: 1343
+        dateCancelled:
+          type: string
+          nullable: true
+          example: 2022-07-29T16:00:00.000000+0000
+        additionalTechs:
+          type: array
+          items:
+            type: integer
+        cancellationReason:
+          type: string
+          nullable: true
+          example: because
+        targetPests:
+          type: array
+          items:
+            type: integer
+        appointmentNotes:
+          type: string
+          nullable: true
+          example: Notes
+        doInterior:
+          type: boolean
+          nullable: true
+          example: false
+        dateUpdated:
+          type: string
+          nullable: true
+          example: 2022-07-29T16:00:00.000000+0000
+        cancelledBy:
+          type: integer
+          format: int64
+          nullable: true
+          example: 2435
+        assignedTech:
+          type: integer
+          format: int64
+          nullable: true
+          example: 0
+        latIn:
+          type: number
+          nullable: true
+          example: 34435.23434
+        latOut:
+          type: number
+          nullable: true
+          example: 34435.23434
+        longIn:
+          type: number
+          nullable: true
+          example: 34435.23434
+        longOut:
+          type: number
+          nullable: true
+          example: 34435.23434
+        sequence:
+          type: integer
+          format: int64
+          nullable: true
+          example: 0
+        lockedBy:
+          type: integer
+          format: int64
+          nullable: true
+          example: 345435
+        unitIds:
+          type: array
+          items:
+            type: integer
+        serviceTypeName:
+          type: string
+          example: Reservice
+        canBeCanceled:
+          type: boolean
+          example: true
+        canBeRescheduled:
+          type: boolean
+          example: true
+    Spot_attributes:
+      type: object
+      properties:
+        date:
+          type: string
+          example: 2022-07-29
+        time:
+          type: string
+          example: AM
+    SubscriptionsGetResponse:
+      type: object
+      properties:
+        links:
+          $ref: '#/components/schemas/SubscriptionsLink'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Subscription'
+    SubscriptionsLink:
+      type: object
+      properties:
+        self:
+          type: string
+          example: /api/v1/customer/{accountNumber}/subscriptions
+    Subscription:
+      required:
+        - attributes
+        - id
+        - type
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 993326
+        type:
+          type: string
+          example: Subscription
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubscriptionAttributes'
+    SubscriptionAttributes:
+      required:
+        - attributes
+        - id
+        - type
+      type: object
+      properties:
+        customerId:
+          type: integer
+          description: Customer ID which this subscription belongs to
+          example: 123456
+        billToAccountId:
+          type: integer
+          description: Billing Account which this subscription belongs to
+          example: 123456
+        officeId:
+          type: integer
+          description: Office ID which this subscription belongs to
+          example: 1
+        dateAdded:
+          type: string
+          description: Date this subscription was added / created. Sold date.
+          example: 2022-08-05T11:22:00.000000+0000
+        contractAdded:
+          type: string
+          description: Date the last contract was added / created.
+          example: 2022-08-05T11:22:00.000000+0000
+        isActive:
+          type: boolean
+          description: 'false: frozen, true: active and being placed in the job pool.'
+          example: true
+        initialQuote:
+          type: number
+          description: The retail quoted price for the initial service on this subscription.
+          example: 249
+        initialDiscount:
+          type: number
+          description: The discount to be applied to the initial service
+          example: 0
+        initialServiceTotal:
+          type: number
+          description: The net amount of initialQuote-initialDiscount. DOES NOT INCLUDE add-ons
+          example: 249
+        yifDiscount:
+          type: number
+          description: The discount provided if paying for a year in advance
+          example: 0
+        recurringCharge:
+          type: number
+          description: A shortcut for the subtotal of the recurring ticket
+          example: 0
+        contractValue:
+          type: number
+          description: Calculated as the initial total + the number of recurring services*recurringCharge. There are some tweaks available for different companies / preferences, particularly when dealing with recurring billing.
+          example: 0
+        billingFrequency:
+          type: integer
+          description: How often this subscription gets their invoice generated -- can be seperate from when their service takes place. 0 / -1 represents getting billed after each service.
+          example: -1
+        frequency:
+          type: integer
+          description: The frequency that the services get scheduled. -1 represents One-Time, 0 represents 'as needed'. Greater than 0 represents the frequency indays. If it is divisible by 30, it is converted to months -- so 90 would represent 3 months and not necessarily 90 days.
+          example: 10
+        followupService:
+          type: integer
+          description: How many days after the initial service to schedule the first recurring service.
+          example: 10
+        agreementLength:
+          type: number
+          description: Agreement Length
+          example: 12
+        nextServiceDate:
+          type: string
+          description: When the next service is due.
+          example: 2022-08-05T11:22:00.000000+0000
+        serviceID:
+          type: integer
+          description: The service type ID for the regular recurring services
+          example: 2498
+        serviceType:
+          type: string
+          description: Friendly description of the serviceID
+          example: Service
+        soldBy:
+          type: integer
+          description: The employee ID who gets credit for this sale. Defaults to the user who added the subscription
+          example: 2498
+        soldBy2:
+          type: integer
+          description: Additional employeeID that gets credit for this sale
+        soldBy3:
+          type: integer
+          description: Additional employeeID that gets credit for this sale
+        preferredTechId:
+          type: integer
+          description: The employee ID of the preferred tech
+        initialAppointmentId:
+          type: integer
+          description: The initial service appointment ID
+        initialStatus:
+          type: integer
+          description: A shortcut for the status of the initial appointment
+        initialStatusText:
+          type: string
+          description: Friendly text version of the initialStatus
+          example: No Appointment
+        dateCancelled:
+          type: string
+          description: The date the subscription was cancelled if any.
+          example: 2022-08-05T11:22:00.000000+0000
+        dateUpdated:
+          type: string
+          description: The date the subscription was last updated.
+          example: 2022-08-05T11:22:00.000000+0000
+        subscriptionLink:
+          type: string
+          description: Subscription Link
+        appointmentIds:
+          type: array
+          description: Every appointment attached to this subscription
+          items:
+            type: integer
+        completedAppointmentIds:
+          type: array
+          description: Every completed appointment attached to this subscription
+          items:
+            type: integer
+        recurringTicket:
+          type: array
+          description: The recurring ticket template associated with this subscription
+          items:
+            $ref: '#/components/schemas/Ticket'
+        leadId:
+          type: integer
+          description: Primary key for lead
+        leadDateAdded:
+          type: string
+          description: Time that this lead was created
+        leadUpdated:
+          type: string
+          description: Time that this lead was last updated
+        leadAddedBy:
+          type: integer
+          description: employeeID that created this lead
+        leadSourceId:
+          type: integer
+          description: Lead Source ID
+        leadSource:
+          type: string
+          description: Lead Source Description
+        leadStatus:
+          type: integer
+          description: Lead Status
+        leadStageId:
+          type: integer
+          description: Lead Stage ID
+        leadStage:
+          type: string
+          description: Lead Stage Description
+        leadAssignedTo:
+          type: integer
+          description: EmployeeID to whom the lead is assigned
+        leadDateAssigned:
+          type: string
+          description: Time the lead was assigned
+        leadValue:
+          type: number
+          description: Value of the lead
+        leadDateClosed:
+          type: string
+          description: Time the lead was closed
+        leadLostReason:
+          type: string
+          description: Lead Lost Reason
+        sourceId:
+          type: integer
+          description: Subscription Source ID
+        source:
+          type: string
+          description: Subscription Source Description
+        unitIds:
+          type: array
+          description: An array of unit IDs available for this subscription (for multi unit customers) - defaults to all unless specific units have been selected
+          items:
+            type: integer
+        regionId:
+          type: integer
+          description: RegionID of the subscription
+        initialInvoice:
+          type: string
+          description: When the initial invoice should get generated. INITIAL_COMPLETION = when the initial service is completed. SIGNED_AGREEMENT = when the agreement is signed. INITIAL_BILLING_DATE = on a specified billing date.
+          example: INITIAL_COMPLETION
+        initialBillingDate:
+          type: string
+          description: The date to generate initial invoice when initialInvoice = INITIAL_BILLING_DATE
+          example: 2022-08-05T08:00:00.000000+0000
+        renewalFrequency:
+          type: integer
+          description: How often a subscription is due for renewal.
+          example: 180
+        renewalDate:
+          type: string
+          description: Next renewal date
+        customDate:
+          type: string
+          description: custom next appointment date
+        sentriconConnected:
+          type: integer
+          description: Set as 1 if the subscription is connected to sentricon
+        sentriconSiteId:
+          type: string
+          description: Sentricon Site ID or null if not connected to Sentricon
+        seasonalEnd:
+          type: string
+          description: seasonalEnd date
+          example: 2022-09-30T08:00:00.000000+0000
+        seasonalStart:
+          type: string
+          description: seasonalStart date
+          example: 2022-08-05T08:00:00.000000+0000
+        statusText:
+          type: string
+          description: status text
+          example: Active
+        lastAppointmentId:
+          type: integer
+          description: lastAppointmentId
+        lastServiceCompleted:
+          type: integer
+          description: lastServiceCompleted
+        maxMonthlyCharge:
+          type: integer
+          description: lastServiceCompleted
+          example: 0
+        nextBillingDate:
+          type: string
+          description: nextBilling date
+          example: 2022-08-05T08:00:00.000000+0000
+        annualRecurringServiceCount:
+          type: integer
+          description: annualRecurringServiceCount
+          example: 16
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique ID
+          example: 21941215
+        customerId:
+          type: integer
+          description: Customer ID which this subscription belongs to
+          example: 2550260
+        billToAccountId:
+          type: integer
+          description: Billing Account which this subscription belongs to
+          example: 2550260
+        officeId:
+          type: integer
+          description: Office ID which this subscription belongs to
+          example: 1
+        dateCreated:
+          type: object
+          description: Date this ticket was added / created.
+        invoiceDate:
+          type: object
+          description: Invoice date
+        dateUpdated:
+          type: object
+          description: The date the ticket was updated
+        active:
+          type: integer
+          description: 0 - pending, 1 - active and counts towards customer's outstanding balance, -1 - a ticket template.
+          example: -1
+        subTotal:
+          type: number
+          description: Subtotal = serviceCharge + sum of line items
+          example: 0
+        taxAmount:
+          type: number
+          description: Total calculated tax
+          example: 0
+        total:
+          type: number
+          description: Subtotal + total
+          example: 0
+        serviceCharge:
+          type: number
+          description: Base charge for this ticket.
+          example: 0
+        isServiceTaxable:
+          type: boolean
+          description: Whether or not the base service charge for this ticket is taxable (true) or not (false)
+        productionValue:
+          type: number
+          description: Value for reporting / commission purposes. -1 - Same as subTotal, >= 0 - different from subtotal
+          example: -1
+        taxRate:
+          type: number
+          description: The tax rate associated with this ticket.
+          example: 0
+        appointmentId:
+          type: integer
+          description: If this ticket is attached to an appointment it will show here
+        balance:
+          type: number
+          description: Any unpaid balance left on this ticket
+          example: 0
+        subscriptionId:
+          type: integer
+          description: ONLY CONTAINS A VALUE WHEN THIS IS A TEMPLATE for a particular subscription. These should never be active
+          example: 2634155
+        autoGenerated:
+          type: integer
+          description: The subscription ID that generated this ticket when it was part of recurring billing, from a renewal or for the initial service if the initial invoice does not get generated at the time of service completion.
+        autoGeneratedType:
+          type: string
+          description: Indicates if the invoice was create as part of the recurring billing schedule, for a subscription renewal or is the initial invoice when the initial invoice is not created at the time of service completion. INITIAL = initial invoice, RECURRING = recurring billing invoice, RENEWAL = renewal invoice.
+          example: NA
+        renewalId:
+          type: integer
+          description: The subscription ID that generated this ticket when it was part of a renewal
+        serviceId:
+          type: integer
+          description: Ticket service type
+          example: 2498
+        items:
+          type: array
+          description: An array of line items associated with this ticket
+          items:
+            type: object
+        invoiceNumber:
+          type: string
+          description: 'The displayed Invoice #'
+          example: "21941215"
+        templateType:
+          type: string
+          description: The ticket template type. I - initial ticket template, R - recurring ticket template, NA - not a ticket template.
+          example: R
+    CustomerShowLinks:
+      type: object
+      properties:
+        self:
+          type: string
+          example: /api/v1/customer/{accountNumber}
+    AppointmentsSearchLinks:
+      type: object
+      properties:
+        self:
+          type: string
+          example: /api/v1/customer/{accountNumber}/appointments
+    SpotsSearchLinks:
+      type: object
+      properties:
+        self:
+          type: string
+          example: /api/v1/customer/{accountNumber}/spots
+    accountNumber_communicationpreferences_body:
+      required:
+        - emailReminders
+        - phoneReminders
+        - smsReminders
+      type: object
+      properties:
+        smsReminders:
+          type: boolean
+        emailReminders:
+          type: boolean
+        phoneReminders:
+          type: boolean
+    accountNumber_appointment_body:
+      type: object
+      properties:
+        spotId:
+          type: integer
+          format: int64
+          example: 22389016
+    AppointmentPutResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/AppointmentResponseData'
+    appointment_appointmentId_body:
+      type: object
+      properties:
+        spotId:
+          type: integer
+          format: int64
+          example: 22389016
+    AppointmentPatchResponse:
+      type: object
+      properties:
+        links:
+          $ref: '#/components/schemas/AppointmentGetLink'
+        data:
+          $ref: '#/components/schemas/AppointmentResponseData'
+    AppointmentResponseData:
+      type: object
+      properties:
+        type:
+          type: string
+          example: Appointment
+        id:
+          type: integer
+          example: 3524543
+    AppointmentGetLink:
+      type: object
+      properties:
+        self:
+          type: string
+          example: /api/v1/customer/2561942/appointment/2625624
+    appointments_history_response:
+      type: object
+      properties:
+        links:
+          type: object
+          properties:
+            self:
+              type: string
+              example: /api/v1/customer/{accountNumber}/appointments/history
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Appointments_with_related_documents'
+        included:
+          type: array
+          items:
+            $ref: '#/components/schemas/Document'
+    Document:
+      type: object
+      properties:
+        type:
+          type: string
+          example: Document
+        id:
+          type: integer
+          format: int64
+          example: 345435
+        attributes:
+          $ref: '#/components/schemas/Document_attributes'
+    Document_attributes:
+      type: object
+      properties:
+        officeId:
+          type: integer
+          format: int64
+          example: 1
+        customerId:
+          type: integer
+          format: int64
+          example: 1256256
+        dateAdded:
+          type: string
+          example: 2022-09-28T15:59:20.000000+0000
+        addedBy:
+          type: integer
+          format: int64
+          example: 56574674
+        showCustomer:
+          type: boolean
+          example: false
+        showTech:
+          type: boolean
+          example: false
+        appointmentId:
+          type: integer
+          format: int64
+          example: 765223
+        prefix:
+          type: string
+          example: demoaptivepest
+        description:
+          type: string
+          example: Document description
+        documentLink:
+          type: string
+          example: https://s3.amazonaws.com/PestRoutes/demoaptivepest-document-333333.jpg
+    FrozenSubscriptionRequestBody:
+      required:
+        - plan_id
+        - agreement_length
+        - plan_price_initial
+        - plan_price_per_treatment
+      type: object
+      properties:
+        plan_id:
+          type: integer
+          description: Service Type Id
+          format: int64
+          example: 1800
+        agreement_length:
+          type: integer
+          description: Contract length
+          format: int64
+          example: 12
+        plan_price_initial:
+          type: integer
+          description: Subscription initial charge
+          format: int64
+          example: 169
+        plan_price_per_treatment:
+          type: integer
+          description: Subscription recurring charge
+          format: int64
+          example: 169
+        initial_addons:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubscriptionAddonsRequest'
+        recurring_addons:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubscriptionAddonsRequest'
+    SubscriptionAddonsRequest:
+      required:
+        - product_id
+      type: object
+      properties:
+        product_id:
+          type: integer
+          description: Addon product id
+          format: int64
+          example: 1960
+        amount:
+          type: number
+          description: Addon price
+          format: float
+          example: 199
+        quantity:
+          type: integer
+          description: Addon qty
+          format: int64
+          example: 1
+        taxable:
+          type: boolean
+          description: True if addon is taxable
+          example: true
+        name:
+          type: string
+          description: Addons description (name)
+          example: Mosquito
+    FrozenSubscriptionResponse:
+      type: object
+      properties:
+        subscriptionId:
+          type: integer
+          description: Newly created frozen subscription id
+          format: int64
+          example: 2962597
+  responses:
+    "402":
+      description: Invalid Credit Card
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+    "403":
+      description: User is not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+    "404":
+      description: Entity not found for current user
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+    "409":
+      description: Can not delete a payment profile because it is set for autopay.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+    "412":
+      description: User cannot be fetched from PestRoutes API
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+    "422":
+      description: Email is not set in authentication token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+    "5XX":
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+    "InvalidRequestBodyError":
+      description: Invalid request body error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorMessage'
+    "205":
+      description: Reset Content
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+  parameters:
+    accountNumber:
+      name: accountNumber
+      in: path
+      description: ID of customer to return
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: integer
+        format: int64

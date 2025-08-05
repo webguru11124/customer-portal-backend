@@ -1,0 +1,48 @@
+{
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "source": {
+        "directories": [
+            "app"
+        ],
+        "excludes": [
+            "Console/Kernel.php",
+            "Exceptions/Handler.php",
+            "Http/Kernel.php",
+            "Http/Middleware/Authenticate.php",
+            "Http/Middleware/EncryptCookies.php",
+            "Http/Middleware/PreventRequestsDuringMaintenance.php",
+            "Http/Middleware/RedirectIfAuthenticated.php",
+            "Http/Middleware/TrimStrings.php",
+            "Http/Middleware/TrustHosts.php",
+            "Http/Middleware/TrustProxies.php",
+            "Http/Middleware/VerifyCsrfToken.php",
+            "Http/Middleware/MeasureResponseTime.php",
+            "Providers/AppServiceProvider.php",
+            "Providers/AuthServiceProvider.php",
+            "Providers/EventServiceProvider.php",
+            "Providers/VaporUiServiceProvider.php",
+            "Providers/RouteServiceProvider.php",
+            "Providers/BroadcastServiceProvider.php",
+            "Actions/Document/DownloadAction.php",
+            "Instrumentation/Datadog/Instrument.php",
+            "Http/Controllers/API/V1/CustomerEmailNotificationController.php",
+            "Http/Controllers/API/V1/CustomerSmsNotificationController.php",
+            "Http/Middleware/LabelNewRelicTransaction.php",
+            "Logging/Taps/WithDataDogContext.php",
+            "Logging/Processors/MessageSizeProcessor.php",
+            "Repositories/PestRoutes/AbstractPestRoutesRepository.php",
+            "Repositories/WorldPay/WorldPayBaseRepository.php"
+        ]
+    },
+    "testFramework": "phpunit",
+    "timeout": 5,
+    "mutators": {
+        "@default": true
+    },
+    "logs": {
+        "text": "php://stdout",
+        "summary": "php://stdout"
+    },
+    "minMsi": 69.0,
+    "initialTestsPhpOptions": "-d memory_limit=2G"
+}

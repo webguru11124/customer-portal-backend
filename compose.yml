@@ -1,0 +1,176 @@
+version: '3'
+
+networks:
+  cp-network:
+
+volumes:
+  cp-volume:
+  cp-redis-cluster_data-0:
+    driver: local
+  cp-redis-cluster_data-1:
+    driver: local
+  cp-redis-cluster_data-2:
+    driver: local
+  cp-redis-cluster_data-3:
+    driver: local
+  cp-redis-cluster_data-4:
+    driver: local
+  cp-redis-cluster_data-5:
+    driver: local
+
+services:
+
+  cp-nginx:
+    platform: linux/amd64
+    image: nginx:stable-alpine
+    container_name: cp-nginx
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./docker/nginx/default.conf.template:/etc/nginx/templates/default.conf.template
+    environment:
+      - PHP_ENDPOINT=cp-php
+    depends_on:
+      - cp-php
+    networks:
+      - cp-network
+
+  # Used for local development
+  cp-mysql:
+    platform: linux/amd64
+    image: mysql:8.0
+    container_name: cp-mysql
+    restart: unless-stopped
+    tty: true
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_DATABASE: chddb
+      MYSQL_ROOT_PASSWORD: secret
+    command: "--default-authentication-plugin=mysql_native_password"
+    volumes:
+      - cp-volume:/var/lib/mysql
+    networks:
+      - cp-network
+    cap_add:
+      - SYS_NICE # CAP_SYS_NICE
+
+  cp-php:
+    platform: linux/amd64
+    container_name: cp-php
+    # This command is used for local development only
+    command: "sh entrypoint.dev.sh"
+    build:
+      context: .
+      args:
+        repman_token: ${COMPOSER_AUTH_TOKEN}
+    volumes:
+      - ./src:/var/www/app
+    env_file:
+      - ./.env
+    networks:
+      - cp-network
+    depends_on:
+      - cp-redis-node-5
+      - cp-mysql
+#    user: "${UID}:${GID}" - for Linux systems only
+
+  cp-worker:
+    platform: linux/amd64
+    container_name: cp-worker
+    # This command is used for local development only
+    command: "php artisan queue:listen"
+    build:
+      context: .
+      args:
+        gitlab_user: ${GITLAB_USER}
+        gitlab_token: ${GITLAB_TOKEN}
+    volumes:
+      - ./src:/var/www/app
+    env_file:
+      - ./.env
+    networks:
+      - cp-network
+    depends_on:
+      - cp-php
+
+  cp-redis-node-0:
+    image: docker.io/bitnami/redis-cluster:7.0
+    volumes:
+      - cp-redis-cluster_data-0:/bitnami/redis/data
+    environment:
+      - 'REDIS_PASSWORD=${REDIS_PASSWORD}'
+      - 'REDIS_NODES=cp-redis-node-0 cp-redis-node-1 cp-redis-node-2 cp-redis-node-3 cp-redis-node-4 cp-redis-node-5'
+    networks:
+      cp-network:
+        aliases:
+        - redis-service-headless
+
+  cp-redis-node-1:
+    image: docker.io/bitnami/redis-cluster:7.0
+    volumes:
+      - cp-redis-cluster_data-1:/bitnami/redis/data
+    environment:
+      - 'REDIS_PASSWORD=${REDIS_PASSWORD}'
+      - 'REDIS_NODES=cp-redis-node-0 cp-redis-node-1 cp-redis-node-2 cp-redis-node-3 cp-redis-node-4 cp-redis-node-5'
+    networks:
+      cp-network:
+        aliases:
+        - redis-service-headless
+
+  cp-redis-node-2:
+    image: docker.io/bitnami/redis-cluster:7.0
+    volumes:
+      - cp-redis-cluster_data-2:/bitnami/redis/data
+    environment:
+      - 'REDIS_PASSWORD=${REDIS_PASSWORD}'
+      - 'REDIS_NODES=cp-redis-node-0 cp-redis-node-1 cp-redis-node-2 cp-redis-node-3 cp-redis-node-4 cp-redis-node-5'
+    networks:
+      cp-network:
+        aliases:
+        - redis-service-headless
+
+  cp-redis-node-3:
+    image: docker.io/bitnami/redis-cluster:7.0
+    volumes:
+      - cp-redis-cluster_data-3:/bitnami/redis/data
+    environment:
+      - 'REDIS_PASSWORD=${REDIS_PASSWORD}'
+      - 'REDIS_NODES=cp-redis-node-0 cp-redis-node-1 cp-redis-node-2 cp-redis-node-3 cp-redis-node-4 cp-redis-node-5'
+    networks:
+      cp-network:
+        aliases:
+        - redis-service-headless
+
+  cp-redis-node-4:
+    image: docker.io/bitnami/redis-cluster:7.0
+    volumes:
+      - cp-redis-cluster_data-4:/bitnami/redis/data
+    environment:
+      - 'REDIS_PASSWORD=${REDIS_PASSWORD}'
+      - 'REDIS_NODES=cp-redis-node-0 cp-redis-node-1 cp-redis-node-2 cp-redis-node-3 cp-redis-node-4 cp-redis-node-5'
+    networks:
+      cp-network:
+        aliases:
+        - redis-service-headless
+
+  cp-redis-node-5:
+    image: docker.io/bitnami/redis-cluster:7.0
+    volumes:
+      - cp-redis-cluster_data-5:/bitnami/redis/data
+    depends_on:
+      - cp-redis-node-0
+      - cp-redis-node-1
+      - cp-redis-node-2
+      - cp-redis-node-3
+      - cp-redis-node-4
+    environment:
+      - 'REDIS_PASSWORD=${REDIS_PASSWORD}'
+      - 'REDISCLI_AUTH=bitnami'
+      - 'REDIS_CLUSTER_REPLICAS=1'
+      - 'REDIS_NODES=cp-redis-node-0 cp-redis-node-1 cp-redis-node-2 cp-redis-node-3 cp-redis-node-4 cp-redis-node-5'
+      - 'REDIS_CLUSTER_CREATOR=yes'
+    networks:
+      cp-network:
+        aliases:
+        - redis-service-headless

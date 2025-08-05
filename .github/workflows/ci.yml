@@ -1,0 +1,171 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+      - 'bugfix/**'
+      - 'hotfix/**'
+      - 'release/**'
+  pull_request:
+    branches: [ development, main, testing, staging ]
+
+env:
+  COMPOSER_AUTH: '{"http-basic": {"aptive.repo.repman.io": {"username": "token", "password": "${{ secrets.COMPOSER_AUTH_TOKEN }}"}}}'
+  APP_NAME: "Aptive Customer Portal."
+  APP_ENV: testing
+  APP_URL: http://localhost
+  APP_KEY: "base64:A/qfweFj5lnobVjOZnRmxBKrOYR1K8AnOMkeqERGTe8="
+  API_HEADER_NAME: Api-Key
+  API_KEY: ${{ secrets.API_KEY }}
+  PESTROUTES_EMPLOYEE_PICTURE_URL: "https://d282x1mqo546ey.cloudfront.net/"
+  PESTROUTES_API_URL: "https://demoawsaptivepest.pestroutes.com/api"
+  FLEX_IVR_WRAPPER_API_URL: "https://tiny-url.prd.goaptive.com/staging/availableSpotV2"
+  SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
+  APP_DEBUG: true
+  LOG_CHANNEL: single
+  LOG_LEVEL: debug
+  DB_CONNECTION: "mysql"
+  DB_HOST: "0.0.0.0"
+  DB_PORT: "3306"
+  DB_DATABASE: "chddb"
+  DB_USERNAME: "root"
+  DB_PASSWORD: "secret"
+  BROADCAST_DRIVER: log
+  CACHE_DRIVER: array
+  REDIS_HOST: redis-service-headless
+  REDIS_PASSWORD: bitnami
+  MAIL_HOST: mailhog
+  MAIL_PORT: 1025
+  MAIL_FROM_NAME: "Aptive Customer Portal."
+  SENDGRID_TOKEN: 'xxxxx'
+  WORLDPAY_APPLICATION_ID: 123456
+  WORLDPAY_CREDENTIALS_TABLE_NAME: credentials
+  WORLDPAY_CREDENTIALS_AWS_REGION: us-east-1
+  ACCOUNT_SYNC_COUNTDOWN: 1000
+  AUTH0_DOMAIN: dev-test.us.auth0.com
+  AUTH0_AUDIENCE: http://localhost:8080/api/v1
+  AUTH0_API_CLIENT_ID: testing
+  AUTH0_API_CLIENT_SECRET: testing
+  AUTH0_API_AUDIENCE: http://localhost:8080/api/v1
+  AUTH0_API_DOMAIN: dev-test.us.auth0.com
+  APTIVE_PAYMENT_SERVICE_URL: https://api.payment-service.tst.goaptive.com
+  APTIVE_PAYMENT_SERVICE_API_KEY: AskJohn111
+  APTIVE_PAYMENT_SERVICE_TOKEN_SCHEME: PCI
+  CLEO_CRM_API_URL: https://crm.stg.goaptive.com
+  CLEO_CRM_API_AUTH_USER_ID: AskJohn!!!
+  FUSIONAUTH_CLIENT_ID: b84ccaf9-c1c7-4ba8-82c9-e263bf9b152a
+  FUSIONAUTH_URL: acme.com
+  JWT_ALGO: HS256
+  JWT_SECRET: Check_aptive_fusionauth_io_admin
+  MAGICLINK_SECRET: Secret_l00000ng_string
+  MAGICLINK_TTL: 24
+  MAGIC_URL: acme.com
+  MAGIC_JWT_ALGO: HS256
+  MAGIC_JWT_SECRET: Secret_l00000ng_string
+  TWILIO_ACCOUNT_SID: 12345
+  TWILIO_API_KEY: 12345
+  TWILIO_API_SECRET: Secret_l00000ng_string
+jobs:
+  test:
+    name: Test (PHP ${{ matrix.php-versions }})
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./src
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: chddb
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+      influx:
+        image: influxdb:2.6-alpine
+        ports:
+          - 8086:8086
+        env:
+          DOCKER_INFLUXDB_INIT_USERNAME: admin
+          DOCKER_INFLUXDB_INIT_PASSWORD: password
+          DOCKER_INFLUXDB_INIT_ORG: "Application Metrics"
+          DOCKER_INFLUXDB_INIT_BUCKET: payment_service
+          DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: someToken12345
+          DOCKER_INFLUXDB_INIT_MODE: setup
+
+    steps:
+      - uses: actions/checkout@v4
+      -
+        name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: phpunit-bridge
+          extensions: pdo, pdo_pgsql, pdo_mysql, pcntl, intl, zip, bcmath, pcov, apcu, opcache, gd
+          coverage: pcov
+      -
+        name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+      -
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+      -
+        name: Validate composer
+        run: composer validate
+      -
+        name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+      -
+        name: Run DB Migrations with seeders
+        run: php artisan migrate:fresh --seed --force
+      -
+        name: PHPStan
+        run: vendor/bin/phpstan analyze --memory-limit 1G
+      -
+        name: Pint
+        run: vendor/bin/pint --test
+      -
+        name: Run test suite
+        run: XDEBUG_MODE=coverage php artisan test --coverage --min=100 --log-junit=./reports/coverage-xml/report.junit.xml --coverage-xml=./reports/coverage-xml --coverage-cobertura=./reports/cobertura/coverage.cobertura.xml --coverage-html=./reports/coverage_html --coverage-text=./reports/text/coverage.txt && cat ./reports/text/coverage.txt
+      -
+        name: Code Coverage Summary Report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: ./**/coverage.cobertura.xml
+          badge: true
+          format: markdown
+          output: both
+      -
+        name: Archive code coverage results
+        uses: actions/upload-artifact@v3
+        with:
+          name: code-coverage-report
+          path: code-coverage-results.md
+
+  validate_v1:
+    name: Validate API Documentation
+    uses: aptive-env/devops/.github/workflows/swaggerhub.yml@main
+    secrets: inherit
+    with:
+      api: customer-portal-api
+      version: 0.0.0
+      path: ./src/storage/api-docs/api-docs.yaml
+      validate: true
+      update: false
+  validate_v2:
+    name: Validate API Documentation
+    uses: aptive-env/devops/.github/workflows/swaggerhub.yml@main
+    secrets: inherit
+    with:
+      api: customer-portal-api
+      version: 0.0.0
+      path: ./src/storage/api-docs/api-docs-v2.yaml
+      validate: true
+      update: false

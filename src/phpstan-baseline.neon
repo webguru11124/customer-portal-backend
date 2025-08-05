@@ -1,0 +1,27 @@
+parameters:
+	ignoreErrors:
+
+		-
+			message: "#^Method App\\\\Repositories\\\\AbstractExternalRepository\\:\\:loadRelation\\(\\) never returns Illuminate\\\\Support\\\\Collection\\<int, T of App\\\\Models\\\\External\\\\AbstractExternalModel\\> so it can be removed from the return type\\.$#"
+			count: 1
+			path: app/Repositories/AbstractExternalRepository.php
+
+		-
+			message: "#^Method App\\\\Repositories\\\\AbstractExternalRepository\\:\\:loadRelation\\(\\) should return Illuminate\\\\Support\\\\Collection\\<int, T of App\\\\Models\\\\External\\\\AbstractExternalModel\\>\\|T of App\\\\Models\\\\External\\\\AbstractExternalModel but returns Illuminate\\\\Support\\\\Collection\\<int, App\\\\Models\\\\External\\\\AbstractExternalModel\\>\\.$#"
+			count: 2
+			path: app/Repositories/AbstractExternalRepository.php
+
+		-
+			message: "#^PHPDoc tag @var for variable \\$relatedRepository contains generic interface App\\\\Interfaces\\\\Repository\\\\ExternalRepository but does not specify its types\\: T$#"
+			count: 1
+			path: app/Repositories/AbstractExternalRepository.php
+
+		-
+			message: "#^Method App\\\\Repositories\\\\Relations\\\\LazyRelationPicker\\:\\:__construct\\(\\) has parameter \\$repository with generic interface App\\\\Interfaces\\\\Repository\\\\ExternalRepository but does not specify its types\\: T$#"
+			count: 1
+			path: app/Repositories/Relations/LazyRelationPicker.php
+
+		-
+			message: "#^Method App\\\\Repositories\\\\Relations\\\\LazyRelationPicker\\:\\:getRepository\\(\\) return type with generic interface App\\\\Interfaces\\\\Repository\\\\ExternalRepository does not specify its types\\: T$#"
+			count: 1
+			path: app/Repositories/Relations/LazyRelationPicker.php
